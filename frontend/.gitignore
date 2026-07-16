@@ -13,6 +13,9 @@ dist-ssr
 *.local
 .env
 
+# Raw uploaded photo dumps (curated copies live in public/services/)
+src/assets/services
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

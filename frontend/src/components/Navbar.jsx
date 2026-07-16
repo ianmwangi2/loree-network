@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { Search, User, Menu, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { services } from '../data/mockData';
+import { api } from '../lib/apiClient';
 
 export const Navbar = () => {
   const { user } = useAuth();
@@ -10,7 +10,12 @@ export const Navbar = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [allServices, setAllServices] = useState([]);
   const searchInputRef = useRef(null);
+
+  useEffect(() => {
+    api.get('/services').then(setAllServices).catch(() => setAllServices([]));
+  }, []);
 
   useEffect(() => {
     if (searchOpen) {
@@ -24,11 +29,11 @@ export const Navbar = () => {
       return;
     }
     const query = searchQuery.toLowerCase();
-    const filtered = services.filter(
+    const filtered = allServices.filter(
       s => s.title.toLowerCase().includes(query) || s.shortDesc.toLowerCase().includes(query)
     ).slice(0, 5);
     setSearchResults(filtered);
-  }, [searchQuery]);
+  }, [searchQuery, allServices]);
 
   return (
     <header className="navbar">

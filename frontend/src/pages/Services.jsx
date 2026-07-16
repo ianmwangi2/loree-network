@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { serviceCategories, services } from '../data/mockData';
+import { api } from '../lib/apiClient';
 import { LucideIcon } from '../components/LucideIcon';
 
 const categoryIcons = {
@@ -13,8 +13,7 @@ const categoryIcons = {
 };
 
 const ServiceCard = ({ service, delay }) => {
-  const categoryLabel = serviceCategories.find(c => c.id === service.category)?.label;
-  const iconName = categoryIcons[service.category] || 'Shield';
+  const iconName = categoryIcons[service.categoryId] || 'Shield';
 
   return (
     <Link
@@ -33,7 +32,7 @@ const ServiceCard = ({ service, delay }) => {
         <span className="service-card-icon">
           <LucideIcon name={iconName} size={22} />
         </span>
-        <span className="service-card-category-badge">{categoryLabel}</span>
+        <span className="service-card-category-badge">{service.category?.label}</span>
       </div>
       <div className="service-card-body">
         <h3 className="service-card-title">{service.title}</h3>
@@ -55,10 +54,27 @@ const ServiceCard = ({ service, delay }) => {
 
 export const Services = () => {
   const [activeCategory, setActiveCategory] = useState('all');
+  const [categories, setCategories] = useState([]);
+  const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [cats, svcs] = await Promise.all([api.get('/categories'), api.get('/services')]);
+        const order = ['surveillance', 'access', 'screening', 'automation', 'electrical'];
+        const sortedCats = [...cats].sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+        setCategories([{ id: 'all', label: 'All Services' }, ...sortedCats]);
+        setServices(svcs);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
 
   const filteredServices = activeCategory === 'all'
     ? services
-    : services.filter(s => s.category === activeCategory);
+    : services.filter(s => s.categoryId === activeCategory);
 
   return (
     <div className="services-page">
@@ -73,7 +89,7 @@ export const Services = () => {
       <div className="services-tabs-wrap">
         <div className="container">
           <div className="services-tabs">
-            {serviceCategories.map(cat => {
+            {categories.map(cat => {
               const iconName = categoryIcons[cat.id] || 'Shield';
               return (
                 <button
@@ -93,11 +109,13 @@ export const Services = () => {
       </div>
 
       <div className="container services-body">
-        <div className="services-grid">
-          {filteredServices.map((service, idx) => (
-            <ServiceCard key={service.id} service={service} delay={idx * 40} />
-          ))}
-        </div>
+        {!loading && (
+          <div className="services-grid">
+            {filteredServices.map((service, idx) => (
+              <ServiceCard key={service.id} service={service} delay={idx * 40} />
+            ))}
+          </div>
+        )}
       </div>
 
       <section className="services-cta">

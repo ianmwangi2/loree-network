@@ -13,7 +13,8 @@ export const createServiceSchema = z.object({
   heroImage: z.string().min(1),
   overview: z.string().min(1),
   details: z.array(detailSchema).default([]),
-  features: z.array(z.string()).default([])
+  features: z.array(z.string()).default([]),
+  gallery: z.array(z.string()).default([])
 });
 
 export const updateServiceSchema = createServiceSchema.partial();

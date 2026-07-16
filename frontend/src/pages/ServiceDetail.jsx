@@ -1,15 +1,42 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { services } from '../data/mockData';
+import { api } from '../lib/apiClient';
 import { LucideIcon } from '../components/LucideIcon';
 
 export const ServiceDetail = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const [service, setService] = useState(null);
+  const [allServices, setAllServices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
-  const service = services.find(s => s.slug === slug);
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setNotFound(false);
 
-  if (!service) {
+    (async () => {
+      try {
+        const [svc, all] = await Promise.all([api.get(`/services/${slug}`), api.get('/services')]);
+        if (cancelled) return;
+        setService(svc);
+        setAllServices(all);
+      } catch {
+        if (!cancelled) setNotFound(true);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [slug]);
+
+  if (loading) return null;
+
+  if (notFound || !service) {
     return (
       <div className="svc-not-found container" style={{ padding: '80px 20px', textAlign: 'center' }}>
         <h1>Service not found</h1>
@@ -20,13 +47,15 @@ export const ServiceDetail = () => {
     );
   }
 
-  const sameCategoryImages = services
-    .filter(s => s.category === service.category && s.id !== service.id)
+  const sameCategoryImages = allServices
+    .filter(s => s.categoryId === service.categoryId && s.id !== service.id)
     .map(s => s.heroImage);
-  const otherCategoryImages = services
-    .filter(s => s.category !== service.category)
+  const otherCategoryImages = allServices
+    .filter(s => s.categoryId !== service.categoryId)
     .map(s => s.heroImage);
-  const galleryImages = [service.heroImage, ...sameCategoryImages, ...otherCategoryImages].slice(0, 4);
+  const galleryImages = service.gallery && service.gallery.length > 0
+    ? service.gallery
+    : [service.heroImage, ...sameCategoryImages, ...otherCategoryImages].slice(0, 4);
 
   return (
     <div className="svc-detail-page">

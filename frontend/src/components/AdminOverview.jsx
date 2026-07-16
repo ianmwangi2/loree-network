@@ -3,14 +3,21 @@ import { useAdmin } from '../context/AdminContext';
 import { TrendingUp, ShoppingBag, Clock, Users, Package } from 'lucide-react';
 import { revenueChartData, adminStatsData } from '../data/mockData';
 
+const STATUS_LABELS = {
+  PROCESSING: 'Processing',
+  SHIPPED: 'Shipped',
+  DELIVERED: 'Delivered',
+  CANCELLED: 'Cancelled'
+};
+
 const StatusBadge = ({ status }) => {
   const statusClasses = {
-    Delivered: 'adm-badge-delivered',
-    Processing: 'adm-badge-processing',
-    Shipped: 'adm-badge-shipped',
-    Cancelled: 'adm-badge-cancelled'
+    DELIVERED: 'adm-badge-delivered',
+    PROCESSING: 'adm-badge-processing',
+    SHIPPED: 'adm-badge-shipped',
+    CANCELLED: 'adm-badge-cancelled'
   };
-  return <span className={`adm-badge ${statusClasses[status] || ''}`}>{status}</span>;
+  return <span className={`adm-badge ${statusClasses[status] || ''}`}>{STATUS_LABELS[status] || status}</span>;
 };
 
 const MonthlyRevenueChart = () => {
@@ -187,10 +194,10 @@ export const AdminOverview = () => {
           <tbody>
             {orders.slice(0, 6).map(order => (
               <tr key={order.id}>
-                <td className="adm-mono">{order.id}</td>
-                <td>{order.customer}</td>
+                <td className="adm-mono">{order.orderNo}</td>
+                <td>{order.user?.name}</td>
                 <td>
-                  {new Date(order.date).toLocaleDateString('en-KE', {
+                  {new Date(order.createdAt).toLocaleDateString('en-KE', {
                     day: 'numeric',
                     month: 'short',
                     year: 'numeric'
@@ -199,7 +206,7 @@ export const AdminOverview = () => {
                 <td>
                   <StatusBadge status={order.status} />
                 </td>
-                <td className="adm-bold">KSh {order.total.toLocaleString()}</td>
+                <td className="adm-bold">KSh {Number(order.total).toLocaleString()}</td>
               </tr>
             ))}
           </tbody>

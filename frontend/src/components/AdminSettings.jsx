@@ -1,22 +1,37 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAdmin } from '../context/AdminContext';
-import { CircleCheckBig, Save, LogOut } from 'lucide-react';
+import { CircleCheckBig, Save, LogOut, AlertCircle } from 'lucide-react';
 
 export const AdminSettings = () => {
-  const { adminLogout } = useAdmin();
+  const { admin, adminLogout, settings, updateSettings } = useAdmin();
   const [success, setSuccess] = useState(false);
-  const [settings, setSettings] = useState({
-    shopName: 'Loree Networks',
-    email: 'info@loree.co.ke',
-    phone: '+254 700 000 000',
-    currency: 'KSh',
-    taxRate: '16'
-  });
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [formData, setFormData] = useState(null);
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    if (settings) setFormData(settings);
+  }, [settings]);
+
+  const handleSubmit = async e => {
     e.preventDefault();
-    setSuccess(true);
-    setTimeout(() => setSuccess(false), 3000);
+    setError('');
+    setSaving(true);
+    try {
+      await updateSettings({
+        shopName: formData.shopName,
+        email: formData.email,
+        phone: formData.phone,
+        currency: formData.currency,
+        taxRate: Number(formData.taxRate)
+      });
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const fields = [
@@ -27,12 +42,22 @@ export const AdminSettings = () => {
     { label: 'VAT Rate (%)', key: 'taxRate', type: 'number' }
   ];
 
+  if (!formData) {
+    return <div className="adm-section">Loading settings...</div>;
+  }
+
   return (
     <div className="adm-section">
       {success && (
         <div className="adm-save-success">
           <CircleCheckBig size={16} />
           <span>Settings saved successfully!</span>
+        </div>
+      )}
+      {error && (
+        <div className="auth-error" style={{ marginBottom: 16 }}>
+          <AlertCircle size={15} />
+          <span>{error}</span>
         </div>
       )}
 
@@ -47,15 +72,13 @@ export const AdminSettings = () => {
                 <label>{field.label}</label>
                 <input
                   type={field.type}
-                  value={settings[field.key]}
-                  onChange={e =>
-                    setSettings(prev => ({ ...prev, [field.key]: e.target.value }))
-                  }
+                  value={formData[field.key]}
+                  onChange={e => setFormData(prev => ({ ...prev, [field.key]: e.target.value }))}
                 />
               </div>
             ))}
-            <button type="submit" className="adm-btn-save" style={{ marginTop: 8 }}>
-              <Save size={14} /> Save Changes
+            <button type="submit" className="adm-btn-save" style={{ marginTop: 8 }} disabled={saving}>
+              <Save size={14} /> {saving ? 'Saving...' : 'Save Changes'}
             </button>
           </form>
         </div>
@@ -71,7 +94,7 @@ export const AdminSettings = () => {
             </div>
             <div className="adm-field">
               <label>Email</label>
-              <div className="adm-readonly">admin@loree.co.ke</div>
+              <div className="adm-readonly">{admin?.email}</div>
             </div>
           </div>
 

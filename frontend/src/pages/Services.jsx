@@ -62,36 +62,13 @@ export const Services = () => {
 
   return (
     <div className="services-page">
-      <section className="services-hero">
-        <div className="services-hero-overlay" />
-        <div className="container services-hero-content">
-          <span className="services-hero-badge">Our Services</span>
-          <h1 className="services-hero-title">
-            Comprehensive Security &
-            <br className="desktop-br" />
-            Infrastructure Solutions
-          </h1>
-          <p className="services-hero-desc">
-            From cutting-edge surveillance systems to professional electrical installations — Loree Networks delivers end-to-end solutions that protect what matters most.
-          </p>
-          <div className="services-hero-stats">
-            <div className="stat-item">
-              <span className="stat-number">14+</span>
-              <span className="stat-label">Core Services</span>
-            </div>
-            <div className="stat-divider" />
-            <div className="stat-item">
-              <span className="stat-number">500+</span>
-              <span className="stat-label">Projects Completed</span>
-            </div>
-            <div className="stat-divider" />
-            <div className="stat-item">
-              <span className="stat-number">15+</span>
-              <span className="stat-label">Years Experience</span>
-            </div>
-          </div>
-        </div>
-      </section>
+      <div className="section-header container">
+        <span className="section-eyebrow">What We Do</span>
+        <h2 className="section-title">End-to-End Security & Infrastructure</h2>
+        <p className="section-subtitle">
+          We design, install, and support the full lifecycle of your security and infrastructure needs.
+        </p>
+      </div>
 
       <div className="services-tabs-wrap">
         <div className="container">
@@ -116,13 +93,6 @@ export const Services = () => {
       </div>
 
       <div className="container services-body">
-        <div className="services-count-bar">
-          <span className="services-count">
-            Showing <strong>{filteredServices.length}</strong>{' '}
-            {filteredServices.length === 1 ? 'service' : 'services'}
-          </span>
-          <span className="services-count-desc">Click any card for full details</span>
-        </div>
         <div className="services-grid">
           {filteredServices.map((service, idx) => (
             <ServiceCard key={service.id} service={service} delay={idx * 40} />
@@ -153,6 +123,47 @@ export const Services = () => {
               </svg>
               <span>WhatsApp Us</span>
             </a>
+          </div>
+        </div>
+      </section>
+
+      <section className="why-section section">
+        <div className="container why-inner">
+          <div className="why-text">
+            <span className="section-eyebrow">Why Choose Us</span>
+            <h2 className="section-title">Built on trust, delivered on time</h2>
+            <p className="why-desc">
+              We've been protecting businesses and infrastructure across Kenya for over 15 years. Every solution we deliver is designed by certified engineers and backed by comprehensive after-sales support.
+            </p>
+            <ul className="why-list">
+              {[
+                'Genuine products with full manufacturer warranties',
+                'Certified engineers with factory training',
+                'After-sales support — not just sales',
+                'VAT-registered, official invoicing',
+                'Free site surveys for all projects',
+                'Rapid response SLA maintenance contracts'
+              ].map(item => (
+                <li className="why-list-item" key={item}>
+                  <LucideIcon name="CircleCheckBig" size={17} className="why-check" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+            <Link to="/about" className="btn-primary" style={{ marginTop: 24, alignSelf: 'flex-start' }}>
+              Learn more about us <LucideIcon name="ArrowRight" size={15} />
+            </Link>
+          </div>
+          <div className="why-img-wrap">
+            <img
+              src="https://images.unsplash.com/photo-1555664424-778a1e5e1b48?w=700&q=80"
+              alt="Engineers working on security system"
+              className="why-img"
+            />
+            <div className="why-img-badge">
+              <span className="why-badge-number">15+</span>
+              <span className="why-badge-label">Years of excellence</span>
+            </div>
           </div>
         </div>
       </section>

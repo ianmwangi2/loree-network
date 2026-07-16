@@ -4,7 +4,11 @@ import { AdminPanel } from '../components/AdminPanel';
 import { AdminLogin } from '../components/AdminLogin';
 
 export const Admin = () => {
-  const { admin } = useAdmin();
+  const { admin, loading } = useAdmin();
+
+  if (loading) {
+    return <div style={{ padding: '80px 20px', textAlign: 'center' }}>Loading...</div>;
+  }
 
   return admin ? <AdminPanel /> : <AdminLogin />;
 };

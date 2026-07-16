@@ -7,7 +7,6 @@ import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 
 // Pages
-import { Home } from './pages/Home';
 import { Services } from './pages/Services';
 import { ServiceDetail } from './pages/ServiceDetail';
 import { About } from './pages/About';
@@ -46,7 +45,7 @@ function App() {
           <Routes>
             {/* Public Layout Routes */}
             <Route path="/" element={<Layout />}>
-              <Route index element={<Home />} />
+              <Route index element={<Services />} />
               <Route path="services" element={<Services />} />
               <Route path="services/:slug" element={<ServiceDetail />} />
               <Route path="about" element={<About />} />

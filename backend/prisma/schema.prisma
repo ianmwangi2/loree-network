@@ -1,0 +1,134 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+enum OrderStatus {
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum ContactTopic {
+  PRODUCT_ENQUIRY
+  QUOTE_REQUEST
+  TECHNICAL_SUPPORT
+  INSTALLATION_BOOKING
+  PARTNERSHIP
+  OTHER
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  phone        String?
+  passwordHash String
+  role         Role     @default(CUSTOMER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  orders             Order[]
+  contactSubmissions ContactSubmission[]
+}
+
+model ServiceCategory {
+  id    String @id
+  label String
+
+  services Service[]
+  products Product[]
+}
+
+model Service {
+  id         String   @id @default(uuid())
+  slug       String   @unique
+  categoryId String
+  category   ServiceCategory @relation(fields: [categoryId], references: [id])
+  title      String
+  shortDesc  String
+  heroImage  String
+  overview   String   @db.Text
+  details    Json
+  features   String[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  contactSubmissions ContactSubmission[]
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  sku         String   @unique
+  categoryId  String
+  category    ServiceCategory @relation(fields: [categoryId], references: [id])
+  price       Decimal  @db.Decimal(12, 2)
+  inStock     Boolean  @default(true)
+  image       String
+  description String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orderItems OrderItem[]
+}
+
+model Order {
+  id        String      @id @default(uuid())
+  orderNo   String      @unique
+  userId    String
+  user      User        @relation(fields: [userId], references: [id])
+  status    OrderStatus @default(PROCESSING)
+  total     Decimal     @db.Decimal(12, 2)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  items OrderItem[]
+}
+
+model OrderItem {
+  id            String   @id @default(uuid())
+  orderId       String
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId     String?
+  product       Product? @relation(fields: [productId], references: [id])
+  nameSnapshot  String
+  priceSnapshot Decimal  @db.Decimal(12, 2)
+  qty           Int
+  image         String?
+}
+
+model ContactSubmission {
+  id        String       @id @default(uuid())
+  name      String
+  email     String
+  phone     String?
+  topic     ContactTopic
+  message   String       @db.Text
+  serviceId String?
+  service   Service?     @relation(fields: [serviceId], references: [id])
+  userId    String?
+  user      User?        @relation(fields: [userId], references: [id])
+  handled   Boolean      @default(false)
+  createdAt DateTime     @default(now())
+}
+
+model StoreSettings {
+  id        Int      @id @default(1)
+  shopName  String
+  email     String
+  phone     String
+  currency  String   @default("KES")
+  taxRate   Decimal  @db.Decimal(5, 2)
+  updatedAt DateTime @updatedAt
+}

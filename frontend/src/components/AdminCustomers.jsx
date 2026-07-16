@@ -3,15 +3,24 @@ import { useAdmin } from '../context/AdminContext';
 import { Search } from 'lucide-react';
 
 export const AdminCustomers = () => {
-  const { users } = useAdmin();
+  const { users, orders } = useAdmin();
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredUsers = users.filter(
-    u =>
-      !searchQuery ||
-      u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredUsers = users
+    .filter(
+      u =>
+        !searchQuery ||
+        u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        u.email.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .map(u => {
+      const userOrders = orders.filter(o => o.userId === u.id);
+      return {
+        ...u,
+        orderCount: userOrders.length,
+        spent: userOrders.reduce((sum, o) => sum + Number(o.total), 0)
+      };
+    });
 
   return (
     <div className="adm-section">
@@ -37,7 +46,6 @@ export const AdminCustomers = () => {
               <th>Orders</th>
               <th>Total Spent</th>
               <th>Joined</th>
-              <th>Status</th>
             </tr>
           </thead>
           <tbody>
@@ -57,22 +65,13 @@ export const AdminCustomers = () => {
                 </td>
                 <td>{user.email}</td>
                 <td>{user.phone}</td>
-                <td>{user.orders}</td>
+                <td>{user.orderCount}</td>
                 <td className="adm-bold">KSh {user.spent.toLocaleString()}</td>
                 <td>
                   {new Date(user.createdAt).toLocaleDateString('en-KE', {
                     month: 'short',
                     year: 'numeric'
                   })}
-                </td>
-                <td>
-                  <span
-                    className={`adm-badge ${
-                      user.status === 'Active' ? 'adm-badge-delivered' : 'adm-badge-cancelled'
-                    }`}
-                  >
-                    {user.status}
-                  </span>
                 </td>
               </tr>
             ))}

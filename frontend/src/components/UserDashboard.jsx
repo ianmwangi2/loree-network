@@ -1,46 +1,58 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { TrendingUp, Package, User, CircleCheckBig, Clock, ChevronRight, Shield, Mail, PenLine, Phone, X, Save, AlertCircle } from 'lucide-react';
+import { TrendingUp, Package, User, CircleCheckBig, Clock, ChevronRight, Shield, Mail, PenLine, Phone, X, Save, AlertCircle, Lock } from 'lucide-react';
+
+const STATUS_LABELS = {
+  PROCESSING: 'Processing',
+  SHIPPED: 'Shipped',
+  DELIVERED: 'Delivered',
+  CANCELLED: 'Cancelled'
+};
 
 const StatusBadge = ({ status }) => {
   let styleClass = '';
   switch (status) {
-    case 'Delivered':
+    case 'DELIVERED':
       styleClass = 'status-delivered';
       break;
-    case 'Processing':
+    case 'PROCESSING':
       styleClass = 'status-processing';
       break;
-    case 'Shipped':
+    case 'SHIPPED':
       styleClass = 'status-shipped';
       break;
-    case 'Cancelled':
+    case 'CANCELLED':
       styleClass = 'status-cancelled';
       break;
     default:
       styleClass = '';
   }
-  return <span className={`order-status ${styleClass}`}>{status}</span>;
+  return <span className={`order-status ${styleClass}`}>{STATUS_LABELS[status] || status}</span>;
 };
 
 export const UserDashboard = () => {
-  const { user, orders, logout, updateProfile } = useAuth();
+  const { user, orders, logout, updateProfile, changePassword } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({ name: user?.name || '', phone: user?.phone || '' });
   const [error, setError] = useState('');
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [expandedOrderId, setExpandedOrderId] = useState(null);
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirm: '' });
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setError('');
     if (!formData.name.trim() || !formData.phone.trim()) {
       setError('Name and phone cannot be empty.');
       return;
     }
     try {
-      updateProfile({ name: formData.name.trim(), phone: formData.phone.trim() });
+      await updateProfile({ name: formData.name.trim(), phone: formData.phone.trim() });
       setEditMode(false);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
@@ -49,9 +61,36 @@ export const UserDashboard = () => {
     }
   };
 
-  const totalSpent = orders.reduce((sum, o) => sum + o.total, 0);
-  const deliveredCount = orders.filter(o => o.status === 'Delivered').length;
-  const processingCount = orders.filter(o => o.status === 'Processing').length;
+  const handleChangePassword = async e => {
+    e.preventDefault();
+    setPasswordError('');
+
+    if (passwordForm.newPassword.length < 8) {
+      setPasswordError('New password must be at least 8 characters.');
+      return;
+    }
+    if (passwordForm.newPassword !== passwordForm.confirm) {
+      setPasswordError('New passwords do not match.');
+      return;
+    }
+
+    setSavingPassword(true);
+    try {
+      await changePassword(passwordForm.currentPassword, passwordForm.newPassword);
+      setChangingPassword(false);
+      setPasswordForm({ currentPassword: '', newPassword: '', confirm: '' });
+      setPasswordSuccess(true);
+      setTimeout(() => setPasswordSuccess(false), 3000);
+    } catch (err) {
+      setPasswordError(err.message);
+    } finally {
+      setSavingPassword(false);
+    }
+  };
+
+  const totalSpent = orders.reduce((sum, o) => sum + Number(o.total), 0);
+  const deliveredCount = orders.filter(o => o.status === 'DELIVERED').length;
+  const processingCount = orders.filter(o => o.status === 'PROCESSING').length;
 
   const dashboardTabs = [
     { id: 'overview', label: 'Overview', icon: <TrendingUp size={16} /> },
@@ -153,9 +192,9 @@ export const UserDashboard = () => {
                 <div className="order-card" key={order.id}>
                   <div className="order-card-header">
                     <div>
-                      <div className="order-id">{order.id}</div>
+                      <div className="order-id">{order.orderNo}</div>
                       <div className="order-date">
-                        {new Date(order.date).toLocaleDateString('en-KE', {
+                        {new Date(order.createdAt).toLocaleDateString('en-KE', {
                           day: 'numeric',
                           month: 'long',
                           year: 'numeric'
@@ -163,7 +202,7 @@ export const UserDashboard = () => {
                       </div>
                     </div>
                     <StatusBadge status={order.status} />
-                    <div className="order-total">KSh {order.total.toLocaleString()}</div>
+                    <div className="order-total">KSh {Number(order.total).toLocaleString()}</div>
                   </div>
                 </div>
               ))}
@@ -214,9 +253,9 @@ export const UserDashboard = () => {
                       onClick={() => setExpandedOrderId(expandedOrderId === order.id ? null : order.id)}
                     >
                       <div className="order-meta">
-                        <div className="order-id">{order.id}</div>
+                        <div className="order-id">{order.orderNo}</div>
                         <div className="order-date">
-                          {new Date(order.date).toLocaleDateString('en-KE', {
+                          {new Date(order.createdAt).toLocaleDateString('en-KE', {
                             day: 'numeric',
                             month: 'long',
                             year: 'numeric'
@@ -227,7 +266,7 @@ export const UserDashboard = () => {
                         </div>
                       </div>
                       <StatusBadge status={order.status} />
-                      <div className="order-total">KSh {order.total.toLocaleString()}</div>
+                      <div className="order-total">KSh {Number(order.total).toLocaleString()}</div>
                       <ChevronRight
                         size={18}
                         className={`order-chevron ${expandedOrderId === order.id ? 'rotated' : ''}`}
@@ -237,19 +276,19 @@ export const UserDashboard = () => {
                       <div className="order-items">
                         {order.items.map(item => (
                           <div className="order-item" key={item.id}>
-                            <img src={item.image} alt={item.name} className="order-item-img" />
+                            <img src={item.image} alt={item.nameSnapshot} className="order-item-img" />
                             <div className="order-item-info">
-                              <div className="order-item-name">{item.name}</div>
+                              <div className="order-item-name">{item.nameSnapshot}</div>
                               <div className="order-item-qty">Qty: {item.qty}</div>
                             </div>
                             <div className="order-item-price">
-                              KSh {(item.price * item.qty).toLocaleString()}
+                              KSh {(Number(item.priceSnapshot) * item.qty).toLocaleString()}
                             </div>
                           </div>
                         ))}
                         <div className="order-items-total">
                           <span>Order Total</span>
-                          <strong>KSh {order.total.toLocaleString()}</strong>
+                          <strong>KSh {Number(order.total).toLocaleString()}</strong>
                         </div>
                       </div>
                     )}
@@ -368,14 +407,89 @@ export const UserDashboard = () => {
 
             <div className="section-heading" style={{ marginTop: 40 }}>
               <h3>Account Security</h3>
+              {!changingPassword && (
+                <button className="edit-btn" onClick={() => setChangingPassword(true)}>
+                  <Lock size={15} /> <span>Change Password</span>
+                </button>
+              )}
             </div>
-            <div className="security-note">
-              <Shield size={18} />
-              <p>
-                Your password and account details are securely stored. To change your password, please{' '}
-                <Link to="/contact">contact support</Link>.
-              </p>
-            </div>
+
+            {passwordSuccess && (
+              <div className="save-success">
+                <CircleCheckBig size={16} /> <span>Password updated successfully!</span>
+              </div>
+            )}
+
+            {changingPassword ? (
+              <form className="edit-form" onSubmit={handleChangePassword}>
+                {passwordError && (
+                  <div className="auth-error">
+                    <AlertCircle size={15} />
+                    <span>{passwordError}</span>
+                  </div>
+                )}
+                <div className="form-group">
+                  <label>Current Password</label>
+                  <div className="input-wrap">
+                    <Lock size={16} className="input-icon" />
+                    <input
+                      type="password"
+                      value={passwordForm.currentPassword}
+                      onChange={e => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
+                      autoComplete="current-password"
+                    />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>New Password</label>
+                    <div className="input-wrap">
+                      <Lock size={16} className="input-icon" />
+                      <input
+                        type="password"
+                        value={passwordForm.newPassword}
+                        onChange={e => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
+                        autoComplete="new-password"
+                        placeholder="Min. 8 characters"
+                      />
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label>Confirm New Password</label>
+                    <div className="input-wrap">
+                      <Lock size={16} className="input-icon" />
+                      <input
+                        type="password"
+                        value={passwordForm.confirm}
+                        onChange={e => setPasswordForm(prev => ({ ...prev, confirm: e.target.value }))}
+                        autoComplete="new-password"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="edit-actions">
+                  <button
+                    type="button"
+                    className="btn-cancel"
+                    onClick={() => {
+                      setChangingPassword(false);
+                      setPasswordError('');
+                      setPasswordForm({ currentPassword: '', newPassword: '', confirm: '' });
+                    }}
+                  >
+                    <X size={15} /> <span>Cancel</span>
+                  </button>
+                  <button type="submit" className="btn-save" disabled={savingPassword}>
+                    <Save size={15} /> <span>{savingPassword ? 'Saving...' : 'Save Password'}</span>
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="security-note">
+                <Shield size={18} />
+                <p>Your password is securely stored and never shared.</p>
+              </div>
+            )}
 
             <div className="section-heading" style={{ marginTop: 40 }}>
               <h3>Logout</h3>

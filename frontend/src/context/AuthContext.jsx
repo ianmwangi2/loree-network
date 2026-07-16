@@ -1,104 +1,88 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
-import { defaultOrdersList } from '../data/mockData';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { api } from '../lib/apiClient';
 
 const AuthContext = createContext(null);
 
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
+  const [token, setToken] = useState(() => localStorage.getItem('loree_token'));
+  const [user, setUser] = useState(null);
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const refreshOrders = useCallback(async currentToken => {
+    const activeToken = currentToken ?? token;
+    if (!activeToken) return;
     try {
-      return JSON.parse(localStorage.getItem('loree_session') || 'null');
+      const data = await api.get('/orders', activeToken);
+      setOrders(data);
     } catch {
-      return null;
+      setOrders([]);
     }
-  });
+  }, [token]);
 
-  const [orders, setOrders] = useState(() => {
-    // Initialise with orders from mockData or user orders
-    return defaultOrdersList;
-  });
-
-  const signup = useCallback((name, email, phone, password) => {
-    let users = [];
-    try {
-      users = JSON.parse(localStorage.getItem('loree_users') || '[]');
-    } catch {
-      users = [];
+  useEffect(() => {
+    if (!token) {
+      setLoading(false);
+      return;
     }
 
-    if (users.find(u => u.email.toLowerCase() === email.toLowerCase())) {
-      throw new Error('An account with this email already exists.');
-    }
+    (async () => {
+      try {
+        const { user: me } = await api.get('/auth/me', token);
+        setUser(me);
+        await refreshOrders(token);
+      } catch {
+        localStorage.removeItem('loree_token');
+        setToken(null);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
-    const newUser = {
-      id: Date.now(),
-      name,
-      email,
-      phone,
-      password,
-      createdAt: new Date().toISOString()
-    };
-
-    users.push(newUser);
-    localStorage.setItem('loree_users', JSON.stringify(users));
-
-    const { password: _, ...userSession } = newUser;
-    setUser(userSession);
-    localStorage.setItem('loree_session', JSON.stringify(userSession));
-    return userSession;
+  const persistSession = useCallback((sessionUser, sessionToken) => {
+    localStorage.setItem('loree_token', sessionToken);
+    setToken(sessionToken);
+    setUser(sessionUser);
   }, []);
 
-  const login = useCallback((email, password) => {
-    let users = [];
-    try {
-      users = JSON.parse(localStorage.getItem('loree_users') || '[]');
-    } catch {
-      users = [];
-    }
+  const signup = useCallback(async (name, email, phone, password) => {
+    const { user: newUser, token: newToken } = await api.post('/auth/signup', { name, email, phone, password });
+    persistSession(newUser, newToken);
+    return newUser;
+  }, [persistSession]);
 
-    const foundUser = users.find(
-      u => u.email.toLowerCase() === email.toLowerCase() && u.password === password
-    );
-
-    if (!foundUser) {
-      throw new Error('Invalid email or password.');
-    }
-
-    const { password: _, ...userSession } = foundUser;
-    setUser(userSession);
-    localStorage.setItem('loree_session', JSON.stringify(userSession));
-    return userSession;
-  }, []);
+  const login = useCallback(async (email, password) => {
+    const { user: loggedInUser, token: newToken } = await api.post('/auth/login', { email, password });
+    persistSession(loggedInUser, newToken);
+    return loggedInUser;
+  }, [persistSession]);
 
   const logout = useCallback(() => {
+    localStorage.removeItem('loree_token');
+    setToken(null);
     setUser(null);
-    localStorage.setItem('loree_session', 'null');
+    setOrders([]);
   }, []);
 
-  const updateProfile = useCallback((profileData) => {
-    let users = [];
-    try {
-      users = JSON.parse(localStorage.getItem('loree_users') || '[]');
-    } catch {
-      users = [];
-    }
+  const updateProfile = useCallback(async profileData => {
+    const updatedUser = await api.patch('/users/me', profileData, token);
+    setUser(updatedUser);
+    return updatedUser;
+  }, [token]);
 
-    const idx = users.findIndex(u => u.id === user.id);
-    if (idx === -1) {
-      throw new Error('User not found.');
-    }
-
-    users[idx] = { ...users[idx], ...profileData };
-    localStorage.setItem('loree_users', JSON.stringify(users));
-
-    const { password: _, ...updatedSession } = users[idx];
-    setUser(updatedSession);
-    localStorage.setItem('loree_session', JSON.stringify(updatedSession));
-  }, [user]);
+  const changePassword = useCallback((currentPassword, newPassword) => {
+    return api.post('/users/me/change-password', { currentPassword, newPassword }, token);
+  }, [token]);
 
   return (
-    <AuthContext.Provider value={{ user, orders, signup, login, logout, updateProfile }}>
+    <AuthContext.Provider
+      value={{ user, token, orders, loading, signup, login, logout, updateProfile, changePassword, refreshOrders }}
+    >
       {children}
     </AuthContext.Provider>
   );

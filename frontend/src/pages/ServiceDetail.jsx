@@ -1,16 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { services, serviceCategories } from '../data/mockData';
+import { services } from '../data/mockData';
 import { LucideIcon } from '../components/LucideIcon';
-
-const categoryIcons = {
-  all: 'Shield',
-  surveillance: 'Camera',
-  access: 'Lock',
-  screening: 'Search',
-  automation: 'Settings',
-  electrical: 'Zap'
-};
 
 export const ServiceDetail = () => {
   const { slug } = useParams();
@@ -29,45 +20,16 @@ export const ServiceDetail = () => {
     );
   }
 
-  // Get related services (same category, excluding this one)
-  const relatedServices = services
+  const sameCategoryImages = services
     .filter(s => s.category === service.category && s.id !== service.id)
-    .slice(0, 3);
-
-  const categoryLabel = serviceCategories.find(c => c.id === service.category)?.label;
-  const iconName = categoryIcons[service.category] || 'Shield';
+    .map(s => s.heroImage);
+  const otherCategoryImages = services
+    .filter(s => s.category !== service.category)
+    .map(s => s.heroImage);
+  const galleryImages = [service.heroImage, ...sameCategoryImages, ...otherCategoryImages].slice(0, 4);
 
   return (
     <div className="svc-detail-page">
-      <section className="svc-hero" style={{ backgroundImage: `url(${service.heroImage})` }}>
-        <div className="svc-hero-overlay" />
-        <div className="container svc-hero-content">
-          <nav className="svc-breadcrumb">
-            <Link to="/">Home</Link>
-            <span>/</span>
-            <Link to="/services">Services</Link>
-            <span>/</span>
-            <span>{service.title}</span>
-          </nav>
-          <span className="svc-category-badge">{categoryLabel}</span>
-          <h1 className="svc-hero-title">
-            <span className="svc-hero-icon">
-              <LucideIcon name={iconName} size={28} />
-            </span>
-            {service.title}
-          </h1>
-          <p className="svc-hero-desc">{service.shortDesc}</p>
-          <div className="svc-hero-actions">
-            <Link to="/contact" className="btn-primary svc-hero-btn">
-              Get a Quote <LucideIcon name="ArrowRight" size={15} />
-            </Link>
-            <a href="tel:+254700123456" className="svc-call-btn">
-              <LucideIcon name="Phone" size={15} /> Call Us Now
-            </a>
-          </div>
-        </div>
-      </section>
-
       <div className="container svc-main">
         <div className="svc-layout">
           <div className="svc-content">
@@ -111,7 +73,7 @@ export const ServiceDetail = () => {
               <p className="svc-contact-text">
                 Our team will get back to you within 2 business hours.
               </p>
-              <Link to="/contact" className="btn-primary svc-contact-btn">
+              <Link to={`/contact?service=${service.slug}`} className="btn-primary svc-contact-btn">
                 Send an Enquiry <LucideIcon name="ArrowRight" size={14} />
               </Link>
               <a href="tel:+254700123456" className="svc-phone-link">
@@ -126,32 +88,16 @@ export const ServiceDetail = () => {
         </div>
       </div>
 
-      {relatedServices.length > 0 && (
-        <section className="svc-related">
+      {galleryImages.length > 0 && (
+        <section className="svc-gallery">
           <div className="container">
-            <h2 className="svc-related-title">Related Services</h2>
-            <div className="svc-related-grid">
-              {relatedServices.map(rel => {
-                const relIconName = categoryIcons[rel.category] || 'Shield';
-                return (
-                  <Link to={`/services/${rel.slug}`} className="svc-related-card" key={rel.id}>
-                    <div className="svc-related-image-wrap">
-                      <img src={rel.heroImage} alt={rel.title} loading="lazy" />
-                      <div className="svc-related-overlay" />
-                      <span className="svc-related-icon">
-                        <LucideIcon name={relIconName} size={18} />
-                      </span>
-                    </div>
-                    <div className="svc-related-body">
-                      <h4>{rel.title}</h4>
-                      <p>{rel.shortDesc}</p>
-                      <span className="svc-related-link">
-                        Learn more <LucideIcon name="ArrowRight" size={13} />
-                      </span>
-                    </div>
-                  </Link>
-                );
-              })}
+            <h2 className="svc-gallery-title">Gallery</h2>
+            <div className="svc-gallery-grid">
+              {galleryImages.map((src, idx) => (
+                <div className="svc-gallery-item" key={idx}>
+                  <img src={src} alt={`${service.title} ${idx + 1}`} loading="lazy" />
+                </div>
+              ))}
             </div>
           </div>
         </section>

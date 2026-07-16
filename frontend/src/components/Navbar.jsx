@@ -35,15 +35,8 @@ export const Navbar = () => {
       <div className="navbar-inner container">
         <Link to="/" className="navbar-logo">
           <img src="/loree-logo.png" alt="Loree Network Solutions" className="navbar-logo-img" />
-          <span className="navbar-brand-text">
-            <span className="navbar-brand-name">LOREE</span>
-            <span className="navbar-brand-sub">NETWORK SOLUTIONS</span>
-          </span>
         </Link>
         <nav className="navbar-nav">
-          <NavLink to="/" end className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
-            Home
-          </NavLink>
           <NavLink to="/services" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
             Services
           </NavLink>
@@ -124,9 +117,6 @@ export const Navbar = () => {
       </div>
       {mobileMenuOpen && (
         <nav className="mobile-nav">
-          <NavLink to="/" end onClick={() => setMobileMenuOpen(false)}>
-            Home
-          </NavLink>
           <NavLink to="/services" onClick={() => setMobileMenuOpen(false)}>
             Services
           </NavLink>

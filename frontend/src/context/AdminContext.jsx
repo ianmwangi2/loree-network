@@ -1,123 +1,108 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
-import { serviceCategories, adminOrdersList, adminCustomersList } from '../data/mockData';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { api } from '../lib/apiClient';
 
 const AdminContext = createContext(null);
 
 export const useAdmin = () => useContext(AdminContext);
 
-const defaultProducts = [
-  {
-    id: 1,
-    name: "TP-Link TL-SF1008P 8-Port PoE Switch",
-    sku: "TP-SF1008P",
-    category: "surveillance",
-    price: 8500,
-    inStock: true,
-    image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=80&q=80",
-    description: "8-Port 10/100Mbps Desktop Switch with 4-Port PoE"
-  },
-  {
-    id: 2,
-    name: "CAT6 Ethernet Cable 10m",
-    sku: "CAT6-10M",
-    category: "automation",
-    price: 1200,
-    inStock: true,
-    image: "https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=80&q=80",
-    description: "High quality copper CAT6 patch cord 10 meters"
-  },
-  {
-    id: 3,
-    name: "Mikrotik RB750Gr3 Router",
-    sku: "RB750GR3",
-    category: "automation",
-    price: 24000,
-    inStock: true,
-    image: "https://images.unsplash.com/photo-1606904825846-647eb07f5be2?w=80&q=80",
-    description: "hEX 5-Port Gigabit Ethernet Router with Dual Core 880MHz CPU"
-  },
-  {
-    id: 4,
-    name: "Ubiquiti UniFi AP AC LR",
-    sku: "UAP-AC-LR",
-    category: "automation",
-    price: 26000,
-    inStock: true,
-    image: "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=80&q=80",
-    description: "802.11ac Long Range Access Point"
-  },
-  {
-    id: 5,
-    name: "RJ45 Crimping Tool Kit",
-    sku: "RJ45-TOOL",
-    category: "automation",
-    price: 3500,
-    inStock: true,
-    image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=80&q=80",
-    description: "All-in-one crimp tool for RJ45, RJ12, RJ11 connectors"
-  },
-  {
-    id: 6,
-    name: "Network Cable Tester",
-    sku: "NET-TESTER",
-    category: "automation",
-    price: 15000,
-    inStock: true,
-    image: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=80&q=80",
-    description: "Professional multi-functional network wire tracker and tester"
-  }
-];
-
-const ADMIN_EMAIL = 'admin@loree.co.ke';
-const ADMIN_PASSWORD = 'Loree@2025';
-
 export const AdminProvider = ({ children }) => {
-  const [admin, setAdmin] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('loree_admin') || 'null');
-    } catch {
-      return null;
-    }
-  });
+  const [token, setToken] = useState(() => localStorage.getItem('loree_admin_token'));
+  const [admin, setAdmin] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [settings, setSettings] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const [products, setProducts] = useState(defaultProducts);
-  const [orders, setOrders] = useState(adminOrdersList);
-  const [users] = useState(adminCustomersList);
-
-  const adminLogin = useCallback((email, password) => {
-    if (email.toLowerCase() !== ADMIN_EMAIL || password !== ADMIN_PASSWORD) {
-      throw new Error('Invalid admin credentials.');
-    }
-    const adminSession = { email: ADMIN_EMAIL, name: 'Admin' };
-    setAdmin(adminSession);
-    localStorage.setItem('loree_admin', JSON.stringify(adminSession));
+  const loadAll = useCallback(async currentToken => {
+    const [productsData, categoriesData, ordersData, usersData, settingsData] = await Promise.all([
+      api.get('/products'),
+      api.get('/categories'),
+      api.get('/admin/orders', currentToken),
+      api.get('/admin/users', currentToken),
+      api.get('/admin/settings', currentToken).catch(() => null)
+    ]);
+    setProducts(productsData);
+    setCategories(categoriesData);
+    setOrders(ordersData);
+    setUsers(usersData);
+    setSettings(settingsData);
   }, []);
+
+  useEffect(() => {
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
+    (async () => {
+      try {
+        const { user: me } = await api.get('/auth/me', token);
+        if (me.role !== 'ADMIN') throw new Error('Not an admin account');
+        setAdmin(me);
+        await loadAll(token);
+      } catch {
+        localStorage.removeItem('loree_admin_token');
+        setToken(null);
+        setAdmin(null);
+      } finally {
+        setLoading(false);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+
+  const adminLogin = useCallback(async (email, password) => {
+    const { user: loggedInAdmin, token: newToken } = await api.post('/auth/admin/login', { email, password });
+    localStorage.setItem('loree_admin_token', newToken);
+    setToken(newToken);
+    setAdmin(loggedInAdmin);
+    await loadAll(newToken);
+  }, [loadAll]);
 
   const adminLogout = useCallback(() => {
+    localStorage.removeItem('loree_admin_token');
+    setToken(null);
     setAdmin(null);
-    localStorage.setItem('loree_admin', 'null');
+    setProducts([]);
+    setOrders([]);
+    setUsers([]);
+    setSettings(null);
   }, []);
 
-  const updateProduct = useCallback((id, updatedFields) => {
-    setProducts(prevProducts =>
-      prevProducts.map(p => (p.id === id ? { ...p, ...updatedFields } : p))
-    );
-  }, []);
+  const createProduct = useCallback(async productData => {
+    const created = await api.post('/products', productData, token);
+    setProducts(prev => [...prev, created]);
+    return created;
+  }, [token]);
 
-  const deleteProduct = useCallback((id) => {
-    setProducts(prevProducts => prevProducts.filter(p => p.id !== id));
-  }, []);
+  const updateProduct = useCallback(async (id, updatedFields) => {
+    const updated = await api.patch(`/products/${id}`, updatedFields, token);
+    setProducts(prev => prev.map(p => (p.id === id ? updated : p)));
+    return updated;
+  }, [token]);
 
-  const updateOrderStatus = useCallback((id, status) => {
-    setOrders(prevOrders =>
-      prevOrders.map(o => (o.id === id ? { ...o, status } : o))
-    );
-  }, []);
+  const deleteProduct = useCallback(async id => {
+    await api.delete(`/products/${id}`, token);
+    setProducts(prev => prev.filter(p => p.id !== id));
+  }, [token]);
 
-  // Compute stats on the fly
-  const activeOrders = orders.filter(o => o.status !== 'Cancelled');
-  const totalRevenue = activeOrders.reduce((sum, o) => sum + o.total, 0);
-  const pendingOrders = orders.filter(o => o.status === 'Processing').length;
+  const updateOrderStatus = useCallback(async (id, status) => {
+    const updated = await api.patch(`/admin/orders/${id}/status`, { status }, token);
+    setOrders(prev => prev.map(o => (o.id === id ? { ...o, ...updated } : o)));
+    return updated;
+  }, [token]);
+
+  const updateSettings = useCallback(async settingsData => {
+    const updated = await api.patch('/admin/settings', settingsData, token);
+    setSettings(updated);
+    return updated;
+  }, [token]);
+
+  const activeOrders = orders.filter(o => o.status !== 'CANCELLED');
+  const totalRevenue = activeOrders.reduce((sum, o) => sum + Number(o.total), 0);
+  const pendingOrders = orders.filter(o => o.status === 'PROCESSING').length;
 
   const stats = {
     totalRevenue,
@@ -131,15 +116,19 @@ export const AdminProvider = ({ children }) => {
     <AdminContext.Provider
       value={{
         admin,
+        loading,
         adminLogin,
         adminLogout,
         products,
-        categories: serviceCategories,
+        categories,
+        createProduct,
         updateProduct,
         deleteProduct,
         orders,
         updateOrderStatus,
         users,
+        settings,
+        updateSettings,
         stats
       }}
     >

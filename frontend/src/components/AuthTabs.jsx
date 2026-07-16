@@ -21,8 +21,7 @@ const LoginForm = ({ onSwitch }) => {
 
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 600));
-      login(email, password);
+      await login(email, password);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -133,8 +132,8 @@ const SignupForm = ({ onSwitch }) => {
       setError('Please fill in all required fields.');
       return;
     }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters.');
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.');
       return;
     }
     if (password !== confirm) {
@@ -144,8 +143,7 @@ const SignupForm = ({ onSwitch }) => {
 
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 700));
-      signup(name, email, phone, password);
+      await signup(name, email, phone, password);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -223,7 +221,7 @@ const SignupForm = ({ onSwitch }) => {
               <input
                 id="signup-password"
                 type={showPassword ? 'text' : 'password'}
-                placeholder="Min. 6 characters"
+                placeholder="Min. 8 characters"
                 value={formData.password}
                 onChange={handleInputChange('password')}
                 autoComplete="new-password"

@@ -15,11 +15,8 @@ export const AdminLogin = () => {
     setError('');
     setLoading(true);
 
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 600));
-
     try {
-      adminLogin(email, password);
+      await adminLogin(email, password);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -74,9 +71,6 @@ export const AdminLogin = () => {
                 {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
               </button>
             </div>
-          </div>
-          <div className="adm-hint">
-            <span>Demo credentials:</span> admin@loree.co.ke / Loree@2025
           </div>
           <button type="submit" className="adm-login-btn" disabled={loading}>
             {loading ? (

@@ -1,8 +1,22 @@
-import React, { useState } from 'react';
-import { contactDetails, enquiryTopics } from '../data/mockData';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { contactDetails } from '../data/mockData';
 import { LucideIcon } from '../components/LucideIcon';
+import { api } from '../lib/apiClient';
+import { useAuth } from '../context/AuthContext';
+
+const TOPIC_OPTIONS = [
+  { value: 'PRODUCT_ENQUIRY', label: 'Product enquiry' },
+  { value: 'QUOTE_REQUEST', label: 'Request a quote' },
+  { value: 'TECHNICAL_SUPPORT', label: 'Technical support' },
+  { value: 'INSTALLATION_BOOKING', label: 'Installation booking' },
+  { value: 'PARTNERSHIP', label: 'Partnership / reseller' },
+  { value: 'OTHER', label: 'Other' }
+];
 
 export const Contact = () => {
+  const { token } = useAuth();
+  const [searchParams] = useSearchParams();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -10,21 +24,45 @@ export const Contact = () => {
     subject: '',
     message: ''
   });
+  const [contextService, setContextService] = useState(null);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const slug = searchParams.get('service');
+    if (!slug) return;
+
+    api
+      .get(`/services/${slug}`)
+      .then(service => {
+        setContextService(service);
+        setFormData(prev => ({ ...prev, subject: 'QUOTE_REQUEST' }));
+      })
+      .catch(() => {});
+  }, [searchParams]);
 
   const handleChange = (e) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     setLoading(true);
-    // Simulate API request delay
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const { subject, ...rest } = formData;
+      await api.post(
+        '/contact',
+        { ...rest, topic: subject, serviceId: contextService?.id },
+        token
+      );
       setSubmitted(true);
-    }, 1200);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -82,6 +120,12 @@ export const Contact = () => {
             <h2 className="contact-form-title">Send us a message</h2>
           </div>
 
+          {contextService && !submitted && (
+            <div className="contact-service-context">
+              Regarding: <strong>{contextService.title}</strong>
+            </div>
+          )}
+
           {submitted ? (
             <div className="contact-success">
               <LucideIcon name="CircleCheck" size={48} className="contact-success-icon" />
@@ -94,6 +138,7 @@ export const Contact = () => {
                 onClick={() => {
                   setSubmitted(false);
                   setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
+                  setContextService(null);
                 }}
               >
                 Send another message
@@ -101,6 +146,12 @@ export const Contact = () => {
             </div>
           ) : (
             <form className="contact-form" onSubmit={handleSubmit} noValidate>
+              {error && (
+                <div className="auth-error">
+                  <LucideIcon name="AlertCircle" size={15} />
+                  <span>{error}</span>
+                </div>
+              )}
               <div className="contact-form-row">
                 <div className="contact-field">
                   <label htmlFor="contact-name">
@@ -156,9 +207,9 @@ export const Contact = () => {
                     required
                   >
                     <option value="">Select a subject…</option>
-                    {enquiryTopics.map(topic => (
-                      <option key={topic} value={topic}>
-                        {topic}
+                    {TOPIC_OPTIONS.map(topic => (
+                      <option key={topic.value} value={topic.value}>
+                        {topic.label}
                       </option>
                     ))}
                   </select>

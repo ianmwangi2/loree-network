@@ -15,9 +15,9 @@ export const Topbar = () => {
         </div>
       </div>
       <div className="topbar-info container">
-        <a href="tel:+254700123456" className="topbar-info-item">
+        <a href="tel:+254111244747" className="topbar-info-item">
           <Phone size={13} strokeWidth={2.2} />
-          <span>Call us: +254700123456</span>
+          <span>Call us: 0111 244747 / 0725 300350</span>
         </a>
         <a href="mailto:info@loreenetworks.co.ke" className="topbar-info-item">
           <Mail size={13} strokeWidth={2.2} />

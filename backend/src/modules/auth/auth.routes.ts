@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { asyncHandler } from '../../lib/asyncHandler';
 import { validateBody } from '../../middleware/validate';
 import { requireAuth } from '../../middleware/auth';
+import { createAuthLimiter } from '../../middleware/rateLimit';
 import { signupSchema, loginSchema } from './auth.schema';
 import * as authService from './auth.service';
 
@@ -9,6 +10,7 @@ const router = Router();
 
 router.post(
   '/signup',
+  createAuthLimiter(),
   validateBody(signupSchema),
   asyncHandler(async (req, res) => {
     const result = await authService.signup(req.body);
@@ -18,6 +20,7 @@ router.post(
 
 router.post(
   '/login',
+  createAuthLimiter(),
   validateBody(loginSchema),
   asyncHandler(async (req, res) => {
     const result = await authService.login(req.body);
@@ -27,6 +30,7 @@ router.post(
 
 router.post(
   '/admin/login',
+  createAuthLimiter(),
   validateBody(loginSchema),
   asyncHandler(async (req, res) => {
     const result = await authService.adminLogin(req.body);

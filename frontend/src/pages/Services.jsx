@@ -57,6 +57,7 @@ export const Services = () => {
   const [categories, setCategories] = useState([]);
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     (async () => {
@@ -66,6 +67,8 @@ export const Services = () => {
         const sortedCats = [...cats].sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
         setCategories([{ id: 'all', label: 'All Services' }, ...sortedCats]);
         setServices(svcs);
+      } catch {
+        setError('Unable to load services right now. Please refresh the page or try again shortly.');
       } finally {
         setLoading(false);
       }
@@ -109,7 +112,13 @@ export const Services = () => {
       </div>
 
       <div className="container services-body">
-        {!loading && (
+        {error && (
+          <div className="auth-error">
+            <LucideIcon name="AlertCircle" size={15} />
+            <span>{error}</span>
+          </div>
+        )}
+        {!loading && !error && (
           <div className="services-grid">
             {filteredServices.map((service, idx) => (
               <ServiceCard key={service.id} service={service} delay={idx * 40} />

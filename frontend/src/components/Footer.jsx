@@ -69,7 +69,11 @@ export const Footer = () => {
           <ul className="footer-contact-list">
             <li>
               <Phone size={14} />
-              <a href="tel:+254700123456">+254 700 123 456</a>
+              <a href="tel:+254111244747">0111 244747</a>
+            </li>
+            <li>
+              <Phone size={14} />
+              <a href="tel:+254725300350">0725 300350</a>
             </li>
             <li>
               <Mail size={14} />

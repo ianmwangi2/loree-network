@@ -14,7 +14,10 @@ export const Navbar = () => {
   const searchInputRef = useRef(null);
 
   useEffect(() => {
-    api.get('/services').then(setAllServices).catch(() => setAllServices([]));
+    api.get('/services').then(setAllServices).catch(err => {
+      console.warn('Failed to load services for search:', err);
+      setAllServices([]);
+    });
   }, []);
 
   useEffect(() => {

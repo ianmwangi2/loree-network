@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import { env } from './config/env';
 import { notFoundHandler, errorHandler } from './middleware/errorHandler';
 
@@ -14,6 +15,7 @@ import adminRoutes from './modules/admin/admin.routes';
 
 export const app = express();
 
+app.use(helmet());
 app.use(
   cors({
     origin: env.CORS_ORIGIN.split(',').map(o => o.trim()),

@@ -59,6 +59,12 @@ export const ServiceDetail = () => {
 
   return (
     <div className="svc-detail-page">
+      <div className="section-header container">
+        <span className="section-eyebrow">{service.category?.label}</span>
+        <h1 className="section-title">{service.title}</h1>
+        <p className="section-subtitle">{service.shortDesc}</p>
+      </div>
+
       <div className="container svc-main">
         <div className="svc-layout">
           <div className="svc-content">
@@ -105,8 +111,8 @@ export const ServiceDetail = () => {
               <Link to={`/contact?service=${service.slug}`} className="btn-primary svc-contact-btn">
                 Send an Enquiry <LucideIcon name="ArrowRight" size={14} />
               </Link>
-              <a href="tel:+254700123456" className="svc-phone-link">
-                <LucideIcon name="Phone" size={14} /> +254 700 123 456
+              <a href="tel:+254111244747" className="svc-phone-link">
+                <LucideIcon name="Phone" size={14} /> 0111 244747 / 0725 300350
               </a>
             </div>
 

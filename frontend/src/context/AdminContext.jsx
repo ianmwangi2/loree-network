@@ -12,21 +12,24 @@ export const AdminProvider = ({ children }) => {
   const [categories, setCategories] = useState([]);
   const [orders, setOrders] = useState([]);
   const [users, setUsers] = useState([]);
+  const [enquiries, setEnquiries] = useState([]);
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const loadAll = useCallback(async currentToken => {
-    const [productsData, categoriesData, ordersData, usersData, settingsData] = await Promise.all([
+    const [productsData, categoriesData, ordersData, usersData, enquiriesData, settingsData] = await Promise.all([
       api.get('/products'),
       api.get('/categories'),
       api.get('/admin/orders', currentToken),
       api.get('/admin/users', currentToken),
+      api.get('/admin/contact', currentToken),
       api.get('/admin/settings', currentToken).catch(() => null)
     ]);
     setProducts(productsData);
     setCategories(categoriesData);
     setOrders(ordersData);
     setUsers(usersData);
+    setEnquiries(enquiriesData);
     setSettings(settingsData);
   }, []);
 
@@ -68,6 +71,7 @@ export const AdminProvider = ({ children }) => {
     setProducts([]);
     setOrders([]);
     setUsers([]);
+    setEnquiries([]);
     setSettings(null);
   }, []);
 
@@ -100,16 +104,32 @@ export const AdminProvider = ({ children }) => {
     return updated;
   }, [token]);
 
+  const markEnquiryHandled = useCallback(async (id, handled = true) => {
+    const updated = await api.patch(`/admin/contact/${id}`, { handled }, token);
+    setEnquiries(prev => prev.map(e => (e.id === id ? { ...e, ...updated } : e)));
+    return updated;
+  }, [token]);
+
+  const replyToEnquiry = useCallback(async (id, replyData) => {
+    const reply = await api.post(`/admin/contact/${id}/reply`, replyData, token);
+    setEnquiries(prev =>
+      prev.map(e => (e.id === id ? { ...e, handled: true, replies: [...(e.replies || []), reply] } : e))
+    );
+    return reply;
+  }, [token]);
+
   const activeOrders = orders.filter(o => o.status !== 'CANCELLED');
   const totalRevenue = activeOrders.reduce((sum, o) => sum + Number(o.total), 0);
   const pendingOrders = orders.filter(o => o.status === 'PROCESSING').length;
+  const pendingEnquiries = enquiries.filter(e => !e.handled).length;
 
   const stats = {
     totalRevenue,
     totalOrders: orders.length,
     pendingOrders,
     totalUsers: users.length,
-    totalProducts: products.length
+    totalProducts: products.length,
+    pendingEnquiries
   };
 
   return (
@@ -127,6 +147,9 @@ export const AdminProvider = ({ children }) => {
         orders,
         updateOrderStatus,
         users,
+        enquiries,
+        markEnquiryHandled,
+        replyToEnquiry,
         settings,
         updateSettings,
         stats

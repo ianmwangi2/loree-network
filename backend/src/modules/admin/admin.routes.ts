@@ -5,7 +5,8 @@ import { requireAuth, requireRole } from '../../middleware/auth';
 import { validateBody } from '../../middleware/validate';
 import { toPublicUser } from '../../lib/serializers';
 import { notFound } from '../../lib/errors';
-import { updateOrderStatusSchema, updateSettingsSchema } from './admin.schema';
+import { sendQuoteReplyEmail } from '../../lib/email';
+import { updateOrderStatusSchema, updateSettingsSchema, createContactReplySchema } from './admin.schema';
 
 const router = Router();
 
@@ -51,7 +52,10 @@ router.get(
     const where = handled === 'true' ? { handled: true } : handled === 'false' ? { handled: false } : undefined;
     const submissions = await prisma.contactSubmission.findMany({
       where,
-      include: { service: { select: { id: true, title: true, slug: true } } },
+      include: {
+        service: { select: { id: true, title: true, slug: true } },
+        replies: { orderBy: { createdAt: 'asc' } }
+      },
       orderBy: { createdAt: 'desc' }
     });
     res.json(submissions);
@@ -66,6 +70,43 @@ router.patch(
       data: { handled: req.body.handled ?? true }
     });
     res.json(submission);
+  })
+);
+
+router.get(
+  '/contact/:id/replies',
+  asyncHandler(async (req, res) => {
+    const replies = await prisma.contactReply.findMany({
+      where: { submissionId: req.params.id },
+      orderBy: { createdAt: 'asc' }
+    });
+    res.json(replies);
+  })
+);
+
+router.post(
+  '/contact/:id/reply',
+  validateBody(createContactReplySchema),
+  asyncHandler(async (req, res) => {
+    const submission = await prisma.contactSubmission.findUnique({ where: { id: req.params.id } });
+    if (!submission) throw notFound('Enquiry not found.');
+
+    const { message, amount } = req.body as { message: string; amount?: number };
+
+    const reply = await prisma.contactReply.create({
+      data: {
+        submissionId: submission.id,
+        message,
+        amount,
+        sentBy: req.user!.sub
+      }
+    });
+
+    await prisma.contactSubmission.update({ where: { id: submission.id }, data: { handled: true } });
+
+    res.status(201).json(reply);
+
+    void sendQuoteReplyEmail(submission.email, submission.name, message, amount ?? null);
   })
 );
 

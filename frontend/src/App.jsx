@@ -12,6 +12,9 @@ import { ServiceDetail } from './pages/ServiceDetail';
 import { About } from './pages/About';
 import { Contact } from './pages/Contact';
 import { Profile } from './pages/Profile';
+import { ForgotPassword } from './pages/ForgotPassword';
+import { ResetPassword } from './pages/ResetPassword';
+import { VerifyEmail } from './pages/VerifyEmail';
 import { Admin } from './pages/Admin';
 
 // Scroll to top helper on route change
@@ -51,6 +54,9 @@ function App() {
               <Route path="about" element={<About />} />
               <Route path="contact" element={<Contact />} />
               <Route path="profile" element={<Profile />} />
+              <Route path="forgot-password" element={<ForgotPassword />} />
+              <Route path="reset-password" element={<ResetPassword />} />
+              <Route path="verify-email" element={<VerifyEmail />} />
             </Route>
 
             {/* Admin Portal Route (Standalone Layout) */}

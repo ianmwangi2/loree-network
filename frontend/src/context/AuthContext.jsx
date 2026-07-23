@@ -51,16 +51,32 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const signup = useCallback(async (name, email, phone, password) => {
-    const { user: newUser, token: newToken } = await api.post('/auth/signup', { name, email, phone, password });
-    persistSession(newUser, newToken);
-    return newUser;
-  }, [persistSession]);
+    return api.post('/auth/signup', { name, email, phone, password });
+  }, []);
 
   const login = useCallback(async (email, password) => {
     const { user: loggedInUser, token: newToken } = await api.post('/auth/login', { email, password });
     persistSession(loggedInUser, newToken);
     return loggedInUser;
   }, [persistSession]);
+
+  const verifyEmail = useCallback(async verificationToken => {
+    const { user: verifiedUser, token: newToken } = await api.post('/auth/verify-email', { token: verificationToken });
+    persistSession(verifiedUser, newToken);
+    return verifiedUser;
+  }, [persistSession]);
+
+  const resendVerification = useCallback(email => {
+    return api.post('/auth/resend-verification', { email });
+  }, []);
+
+  const forgotPassword = useCallback(email => {
+    return api.post('/auth/forgot-password', { email });
+  }, []);
+
+  const resetPassword = useCallback((resetToken, password) => {
+    return api.post('/auth/reset-password', { token: resetToken, password });
+  }, []);
 
   const logout = useCallback(() => {
     localStorage.removeItem('loree_token');
@@ -81,7 +97,22 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, token, orders, loading, signup, login, logout, updateProfile, changePassword, refreshOrders }}
+      value={{
+        user,
+        token,
+        orders,
+        loading,
+        signup,
+        login,
+        logout,
+        updateProfile,
+        changePassword,
+        refreshOrders,
+        verifyEmail,
+        resendVerification,
+        forgotPassword,
+        resetPassword
+      }}
     >
       {children}
     </AuthContext.Provider>

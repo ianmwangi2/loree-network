@@ -21,5 +21,5 @@ export const contactDetails = [{icon:'Phone',label:`Phone`,value:`0111 244747 / 
 export const adminStatsData = [{label:`ICT / IT`,pct:35,color:`#1a6b5e`},{label:`Security`,pct:28,color:`#2a9d8a`},{label:`Solar`,pct:18,color:`#22c55e`},{label:`Fire Safety`,pct:10,color:`#f39c12`},{label:`Smart Home`,pct:6,color:`#3498db`},{label:`Cabling`,pct:3,color:`#9b59b6`}];
 
 
-export const adminDashboardTabs = [{id:`overview`,label:`Overview`,icon:'LayoutDashboard'},{id:`products`,label:`Products`,icon:'Package'},{id:`orders`,label:`Orders`,icon:'ShoppingBag'},{id:`customers`,label:`Customers`,icon:'Users'},{id:`settings`,label:`Settings`,icon:'Settings'}];
+export const adminDashboardTabs = [{id:`overview`,label:`Overview`,icon:'LayoutDashboard'},{id:`products`,label:`Products`,icon:'Package'},{id:`orders`,label:`Orders`,icon:'ShoppingBag'},{id:`enquiries`,label:`Enquiries`,icon:'Mail'},{id:`customers`,label:`Customers`,icon:'Users'},{id:`settings`,label:`Settings`,icon:'Settings'}];
 

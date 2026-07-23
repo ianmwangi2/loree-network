@@ -1,18 +1,23 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Mail, Lock, User, Eye, EyeOff, Phone, ShoppingBag, Star, Shield, ArrowRight, ChevronRight, AlertCircle } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff, Phone, ShoppingBag, Star, Shield, ArrowRight, ChevronRight, AlertCircle, MailCheck } from 'lucide-react';
 
 const LoginForm = ({ onSwitch }) => {
-  const { login } = useAuth();
+  const { login, resendVerification } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [unverified, setUnverified] = useState(false);
+  const [resent, setResent] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setUnverified(false);
+    setResent(false);
 
     if (!email || !password) {
       setError('Please fill in all fields.');
@@ -24,8 +29,20 @@ const LoginForm = ({ onSwitch }) => {
       await login(email, password);
     } catch (err) {
       setError(err.message);
+      if (err.message?.toLowerCase().includes('verify your email')) {
+        setUnverified(true);
+      }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    try {
+      await resendVerification(email);
+      setResent(true);
+    } catch {
+      // resend endpoint always responds success-shaped; nothing to surface here
     }
   };
 
@@ -46,6 +63,15 @@ const LoginForm = ({ onSwitch }) => {
             <span>{error}</span>
           </div>
         )}
+        {unverified && (
+          resent ? (
+            <p className="auth-resend-note">Verification email sent — check your inbox.</p>
+          ) : (
+            <button type="button" className="auth-resend-btn" onClick={handleResend}>
+              Resend verification email
+            </button>
+          )
+        )}
 
         <div className="form-group">
           <label htmlFor="login-email">Email Address</label>
@@ -63,7 +89,10 @@ const LoginForm = ({ onSwitch }) => {
         </div>
 
         <div className="form-group">
-          <label htmlFor="login-password">Password</label>
+          <div className="form-group-label-row">
+            <label htmlFor="login-password">Password</label>
+            <Link to="/forgot-password" className="auth-forgot-link">Forgot password?</Link>
+          </div>
           <div className="input-wrap">
             <Lock size={16} className="input-icon" />
             <input
@@ -118,6 +147,7 @@ const SignupForm = ({ onSwitch }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   const handleInputChange = (field) => (e) => {
     setFormData(prev => ({ ...prev, [field]: e.target.value }));
@@ -144,12 +174,35 @@ const SignupForm = ({ onSwitch }) => {
     setLoading(true);
     try {
       await signup(name, email, phone, password);
+      setSubmitted(true);
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
+
+  if (submitted) {
+    return (
+      <div className="auth-card">
+        <div className="auth-header">
+          <div className="auth-icon-wrap">
+            <MailCheck size={28} />
+          </div>
+          <h2>Check Your Email</h2>
+          <p>
+            We've sent a verification link to <strong>{formData.email}</strong>. Click it to activate
+            your account, then sign in.
+          </p>
+        </div>
+        <p className="auth-switch">
+          <button onClick={onSwitch}>
+            Back to sign in <ChevronRight size={13} />
+          </button>
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="auth-card">

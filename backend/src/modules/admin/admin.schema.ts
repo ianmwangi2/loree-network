@@ -12,3 +12,8 @@ export const updateSettingsSchema = z.object({
   currency: z.string().min(1).optional(),
   taxRate: z.number().min(0).max(100).optional()
 });
+
+export const createContactReplySchema = z.object({
+  message: z.string().min(1, 'Message is required'),
+  amount: z.number().positive().optional()
+});

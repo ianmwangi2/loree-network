@@ -4,6 +4,7 @@ import { adminDashboardTabs } from '../data/mockData';
 import { AdminOverview } from './AdminOverview';
 import { AdminProducts } from './AdminProducts';
 import { AdminOrders } from './AdminOrders';
+import { AdminEnquiries } from './AdminEnquiries';
 import { AdminCustomers } from './AdminCustomers';
 import { AdminSettings } from './AdminSettings';
 import { LogOut } from 'lucide-react';
@@ -17,6 +18,7 @@ export const AdminPanel = () => {
     overview: <AdminOverview />,
     products: <AdminProducts />,
     orders: <AdminOrders />,
+    enquiries: <AdminEnquiries />,
     customers: <AdminCustomers />,
     settings: <AdminSettings />
   };
@@ -31,6 +33,8 @@ export const AdminPanel = () => {
         return `${stats.totalProducts} products listed`;
       case 'orders':
         return `${stats.totalOrders} orders • ${stats.pendingOrders} pending`;
+      case 'enquiries':
+        return `${stats.pendingEnquiries} new enquiries`;
       case 'customers':
         return `${stats.totalUsers} registered customers`;
       case 'settings':
@@ -61,6 +65,9 @@ export const AdminPanel = () => {
               <span>{tab.label}</span>
               {tab.id === 'orders' && stats.pendingOrders > 0 && (
                 <span className="adm-nav-badge">{stats.pendingOrders}</span>
+              )}
+              {tab.id === 'enquiries' && stats.pendingEnquiries > 0 && (
+                <span className="adm-nav-badge">{stats.pendingEnquiries}</span>
               )}
             </button>
           ))}

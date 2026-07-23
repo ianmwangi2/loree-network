@@ -276,8 +276,14 @@ async function main() {
     const passwordHash = await hashPassword(adminPassword);
     await prisma.user.upsert({
       where: { email: adminEmail.toLowerCase() },
-      update: { passwordHash, role: 'ADMIN' },
-      create: { name: 'Admin', email: adminEmail.toLowerCase(), passwordHash, role: 'ADMIN' }
+      update: { passwordHash, role: 'ADMIN', emailVerified: true },
+      create: {
+        name: 'Admin',
+        email: adminEmail.toLowerCase(),
+        passwordHash,
+        role: 'ADMIN',
+        emailVerified: true
+      }
     });
     console.log(`Seeded admin account for ${adminEmail}.`);
   }
